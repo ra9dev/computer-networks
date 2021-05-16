@@ -61,7 +61,7 @@ func reader(fileName string, out chan<- byte) {
 	}
 }
 
-func multiplexer(outChannels [numOfThreads]chan byte, multiplexedDataCh chan<- []byte) {
+func multiplexer(outChannels []chan byte, multiplexedDataCh chan<- []byte) {
 	data := make([]byte, 0)
 
 	// Пока хотя бы один канал отдает полезную информацию, мы читаем из всех
@@ -88,7 +88,10 @@ func multiplexer(outChannels [numOfThreads]chan byte, multiplexedDataCh chan<- [
 }
 
 func main() {
-	outChannels := [numOfThreads]chan byte{make(chan byte, frameSize), make(chan byte, frameSize), make(chan byte, frameSize)}
+	outChannels := make([]chan byte, 0, numOfThreads)
+	for i := 0; i < numOfThreads; i++ {
+		outChannels = append(outChannels, make(chan byte, frameSize))
+	}
 
 	for i := 0; i < numOfThreads; i++ {
 		fileName := fmt.Sprintf("./physical-layer/multiplexer/data/file%d.in", i+1)
@@ -105,7 +108,11 @@ func main() {
 func recoverData(data []byte) {
 	fmt.Println("Returning data back...")
 
-	recoveredData := [numOfThreads][]byte{make([]byte, 0), make([]byte, 0), make([]byte, 0)}
+	recoveredData := make([][]byte, 0)
+	for i := 0; i < numOfThreads; i++ {
+		recoveredData = append(recoveredData, make([]byte, 0))
+	}
+
 	for i := 0; i < len(data); i += numOfThreads {
 		// Читаем по 3 байта сразу и пишем их в нужные массивы байт для последующего восстановления данных
 		for j := 0; j < numOfThreads; j++ {
